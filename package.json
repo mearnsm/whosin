@@ -1,0 +1,10 @@
+{
+  "name": "whosin",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Who's in? Find the night your mates are all free.",
+  "dependencies": {
+    "@netlify/blobs": "^11.1.0"
+  }
+}

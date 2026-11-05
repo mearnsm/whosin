@@ -1,0 +1,708 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#faf8f3">
+<title>Who's in?</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231f5c3a'/%3E%3Cpath d='M9 16.5l4.5 4.5L23 11.5' fill='none' stroke='%23faf8f3' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Figtree:wght@400;500;600;700;800&display=swap">
+<style>
+body{margin:0}
+[hidden]{display:none!important}
+/* Layout: one narrow column like a phone app — banner (the plan or best night), pint-glass calendar grid, day detail, the crew. Dark-first: a pub at night. */
+:root{
+  --bg:#faf8f3;          /* off-white */
+  --surface:#ffffff;
+  --surface-2:#f0ede4;
+  --line:#e3ded2;
+  --fg:#1d2420;
+  --muted:#62675e;
+  --amber:#1f5c3a;       /* highlight: dark green */
+  --amber-deep:#164429;
+  --amber-soft:rgba(31,92,58,.22);
+  --maybe:rgba(31,92,58,.10);
+  --gold:#1f5c3a;        /* golden nights: dark green */
+  --on-gold:#faf8f3;
+  --ok:#5fa86b;
+  --no:#b84a3a;
+  --font-display:"Alfa Slab One", "Rockwell", Georgia, serif;
+  --font-body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme:light;
+}
+
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:18px 40px;-webkit-tap-highlight-color:transparent}
+.app{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,input:focus-visible,.day:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+input{font:inherit;color:var(--fg)}
+
+/* header */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand h1{font-family:var(--font-display);font-weight:400;font-size:34px;line-height:1;margin:0;letter-spacing:.5px}
+.brand svg{flex:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:42px;padding:0 16px;border-radius:12px;font-weight:700;font-size:14px}
+.btn-primary{background:var(--amber);color:var(--on-gold)}
+.btn-primary:hover{background:var(--amber-deep)}
+.btn-ghost{background:var(--surface-2);color:var(--fg)}
+.btn-ghost:hover{background:var(--line)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* groups */
+.groups{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -4px;padding:2px 4px}
+.groups::-webkit-scrollbar{display:none}
+.chip{flex:none;height:36px;padding:0 14px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-weight:600;font-size:14px;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.chip.add{border-style:dashed;color:var(--muted)}
+
+/* banner */
+.banner{border-radius:18px;padding:18px;background:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column;gap:12px}
+.banner.on{background:var(--gold);color:var(--on-gold);border-color:var(--gold)}
+.banner .eyebrow{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.banner.on .eyebrow{color:var(--on-gold);opacity:.7}
+.banner h2{font-family:var(--font-display);font-weight:400;font-size:26px;line-height:1.1;margin:0;text-wrap:balance}
+.banner p{margin:0}
+.progress{display:flex;gap:5px}
+.progress i{flex:1;height:8px;border-radius:4px;background:var(--surface-2)}
+.progress i.f{background:var(--amber)}
+.progress i.m{background:var(--amber-soft)}
+.banner.on .progress i{background:rgba(250,248,243,.25)}
+.banner.on .progress i.f{background:var(--on-gold)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.banner.on .btn-ghost{background:rgba(250,248,243,.18);color:var(--on-gold)}
+.banner.on .btn-primary{background:var(--on-gold);color:var(--gold)}
+.rsvp{font-size:14px}
+
+/* mode switch */
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px}
+.seg button{height:36px;border-radius:9px;font-weight:700;font-size:14px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface-2);color:var(--fg)}
+.hint{font-size:13px;color:var(--muted);margin:-8px 0 0}
+
+/* calendar */
+.cal{display:flex;flex-direction:column;gap:6px;user-select:none;-webkit-user-select:none;touch-action:pan-y}
+.cal.painting{touch-action:none}
+.dow,.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.dow span{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:center}
+.month{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:8px 0 0}
+.day{position:relative;aspect-ratio:1/1.12;max-width:100%;border-radius:11px;background:var(--surface);border:1px solid var(--line);overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;padding:5px 6px;text-align:left;cursor:pointer;font-variant-numeric:tabular-nums}
+.day .fill{position:absolute;left:0;right:0;bottom:0;background:var(--amber-soft);transition:height .25s ease}
+.day .fill-m{position:absolute;left:0;right:0;background:var(--maybe);transition:all .25s ease}
+.day .num,.day .cnt{position:relative;z-index:1}
+.day .num{font-weight:700;font-size:15px;line-height:1}
+.day .cnt{font-size:11px;font-weight:700;color:var(--muted);align-self:flex-end;line-height:1}
+.day.past{opacity:.32;cursor:default}
+.day.empty{visibility:hidden}
+.day.today .num::after{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--amber);margin-left:4px;vertical-align:middle}
+.day.mine-free{border-color:var(--amber);box-shadow:inset 0 0 0 1px var(--amber)}
+.day.mine-maybe{border-color:var(--amber);border-style:dashed}
+.day.mine-free::before,.day.mine-maybe::before{position:absolute;top:4px;right:5px;z-index:2;font-size:11px;font-weight:800;color:var(--amber)}
+.day.mine-free::before{content:"✓"}
+.day.mine-maybe::before{content:"?"}
+.day.golden{background:var(--gold);border-color:var(--gold)}
+.day.golden .fill,.day.golden .fill-m{display:none}
+.day.golden .num,.day.golden .cnt{color:var(--on-gold)}
+.day.golden.mine-free::before,.day.golden.mine-maybe::before{color:var(--on-gold)}
+.day.golden.mine-free{box-shadow:inset 0 0 0 2px var(--on-gold)}
+.day.golden::after{content:"";position:absolute;left:0;right:0;top:0;height:5px;background:var(--on-gold);opacity:.85}
+.day.planned{outline:3px solid var(--ok);outline-offset:1px}
+.day.sel{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--fg)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend b{display:inline-block;width:14px;height:14px;border-radius:4px;border:1px solid var(--line)}
+
+/* panels */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.card h3{margin:0;font-size:17px;font-weight:800}
+.card .sub{font-size:13px;color:var(--muted);margin:0}
+.people{display:flex;flex-direction:column;gap:2px;margin:0;padding:0;list-style:none}
+.person{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--line)}
+.person:first-child{border-top:0}
+.av{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff}
+.person .nm{flex:1;min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.person .st{font-size:13px;color:var(--muted);text-align:right}
+.tag{font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--surface-2)}
+.tag.free{background:var(--amber);color:var(--on-gold)}
+.tag.maybe{background:var(--amber-soft);color:var(--fg)}
+.tag.in{background:var(--ok);color:#0f1f12}
+.tag.out{background:var(--no);color:#2a0d08}
+.nudge{color:var(--no);font-weight:600}
+
+.notice{border-radius:14px;padding:12px 14px;background:var(--surface-2);font-size:14px}
+.notice strong{display:block;margin-bottom:2px}
+
+/* sheet */
+.sheet-wrap{position:fixed;inset:0;z-index:20;background:rgba(10,6,3,.6);display:flex;align-items:flex-end;justify-content:center;
+  padding:0 max(0px, env(safe-area-inset-right, 0px)) 0 max(0px, env(safe-area-inset-left, 0px))}
+.sheet{width:100%;max-width:560px;background:var(--surface);border-radius:20px 20px 0 0;border:1px solid var(--line);
+  padding:20px max(18px, env(safe-area-inset-left, 0px)) calc(22px + env(safe-area-inset-bottom, 0px));display:flex;flex-direction:column;gap:14px}
+.sheet h3{font-family:var(--font-display);font-weight:400;font-size:24px;margin:0}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;font-weight:700;color:var(--muted)}
+.field input{height:46px;border-radius:12px;border:1px solid var(--line);background:var(--bg);padding:0 14px;font-size:16px}
+.stepper{display:flex;align-items:center;gap:12px}
+.stepper button{width:42px;height:42px;border-radius:12px;background:var(--surface-2);font-size:20px;font-weight:800}
+.stepper output{min-width:2ch;text-align:center;font-family:var(--font-display);font-size:26px}
+.err{color:var(--no);font-size:13px;margin:0}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom, 0px));z-index:30;background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:700;font-size:14px;max-width:calc(100% - 32px)}
+.loading{color:var(--muted);font-size:14px}
+
+@media (max-width:380px){.day .cnt{font-size:10px}.day .num{font-size:13px}.brand h1{font-size:28px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.gate h3{font-family:var(--font-display);font-weight:400;font-size:26px;line-height:1.1}
+.gate form{display:flex;flex-direction:column;gap:14px}
+.field input{width:100%}
+.field .note{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <h1>Who's in?</h1>
+    </div>
+    <button class="btn btn-ghost" id="newGroupBtn" type="button">+ New group</button>
+  </header>
+
+  <nav class="groups" id="groups" aria-label="Your groups"></nav>
+  <div id="status"></div>
+
+  <section class="card gate" id="gate" hidden></section>
+
+  <div id="mainView" style="display:flex;flex-direction:column;gap:18px">
+    <section class="banner" id="banner" aria-live="polite"></section>
+
+    <div class="seg" role="group" aria-label="Calendar mode">
+      <button type="button" id="modeMark" aria-pressed="true">Mark my nights</button>
+      <button type="button" id="modeLook" aria-pressed="false">Who's in</button>
+    </div>
+    <p class="hint" id="hint"></p>
+
+    <section class="cal" id="cal" aria-label="Next eight weeks"></section>
+    <div class="legend">
+      <span><b style="background:var(--surface)"></b>Nobody yet</span>
+      <span><b style="background:linear-gradient(to top,var(--amber-soft) 60%,var(--surface) 60%)"></b>Filling up</span>
+      <span><b style="background:var(--gold);border-color:var(--gold)"></b>Enough for a session</span>
+    </div>
+
+    <section class="card" id="detail"></section>
+    <section class="card" id="crew"></section>
+  </div>
+</div>
+
+<div class="sheet-wrap" id="sheetWrap" hidden>
+  <form class="sheet" id="sheet" autocomplete="off">
+    <h3 id="sheetTitle">New group</h3>
+    <div class="field" id="fName">
+      <label for="gName">Group name</label>
+      <input id="gName" maxlength="40" placeholder="Thursday Club">
+    </div>
+    <div class="field" id="fPass">
+      <label for="gPass">Group password</label>
+      <input id="gPass" maxlength="100" placeholder="Something your mates will remember" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <span class="note">You'll send this to your mates along with the invite link.</span>
+    </div>
+    <div class="field" id="fThresh">
+      <label>Minimum for a session</label>
+      <div class="stepper">
+        <button type="button" id="tMinus" aria-label="Fewer">−</button>
+        <output id="tVal">4</output>
+        <button type="button" id="tPlus" aria-label="More">+</button>
+        <span class="sub" style="font-size:13px;color:var(--muted)">people free on the same night</span>
+      </div>
+    </div>
+    <div class="field">
+      <label for="nick">What do your mates call you?</label>
+      <input id="nick" maxlength="24" placeholder="Big Steve">
+    </div>
+    <p class="err" id="sheetErr" hidden></p>
+    <div class="row">
+      <button class="btn btn-primary" type="submit" id="sheetGo" style="flex:1">Create group</button>
+      <button class="btn btn-ghost" type="button" id="sheetCancel">Cancel</button>
+    </div>
+  </form>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const SHORTM = MONTHS.map(m=>m.slice(0,3));
+  const WEEKS = 8;
+  const PALETTE = ["#b8613a","#5d7fb0","#4f9a76","#9b5fa8","#c08a2a","#3f8f9b","#a8506a","#6c7a3a"];
+  const MARK_HINT = "Tap a night to mark yourself free. Tap again to clear. Drag to mark several.";
+  const LOOK_HINT = "Tap a night to see who's free.";
+
+  const pad = n => String(n).padStart(2,"0");
+  const key = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const fromKey = k => { const [y,m,d]=k.split("-").map(Number); return new Date(y,m-1,d); };
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayKey = key(today);
+  const nice = k => { const d=fromKey(k); return `${DAYS[(d.getDay()+6)%7]} ${d.getDate()} ${SHORTM[d.getMonth()]}`; };
+  const longNice = k => { const d=fromKey(k); return `${["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`; };
+  const hash = s => { let h=0; for (const c of s) h=(h*31+c.charCodeAt(0))|0; return Math.abs(h); };
+  const initials = n => (n||"?").trim().split(/\s+/).map(w=>w[0]).slice(0,2).join("").toUpperCase();
+  const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
+  const lsSet = (k,v) => { try { localStorage.setItem(k,v); } catch {} };
+  const lsDel = k => { try { localStorage.removeItem(k); } catch {} };
+
+  // ---- state
+  // sessions: groups this browser has joined → { mid, token, name }
+  let sessions = {};
+  try { sessions = JSON.parse(lsGet("whosin.sessions") || "{}") || {}; } catch {}
+  const saveSessions = () => lsSet("whosin.sessions", JSON.stringify(sessions));
+  const urlGroup = () => new URLSearchParams(location.search).get("g");
+
+  let currentId = null;
+  let group = null, members = [];
+  let myDays = {};
+  let mode = "mark", selected = null;
+  let dirty = false, writeBusy = false, writePending = false;
+  let painting = null, pollT = null, loading = false;
+
+  const sess = () => sessions[currentId];
+  const myId = () => sess() && sess().mid;
+  const crew = () => members;
+  const isMe = m => m.id === myId();
+  const nameOf = m => (m.nick || "Someone") + (isMe(m) ? " (you)" : "");
+  const colorOf = m => PALETTE[hash(m.id)%PALETTE.length];
+  const daysOf = m => isMe(m) ? myDays : (m.days||{});
+  const activePlan = () => group && group.plan && group.plan.date >= todayKey ? group.plan : null;
+
+  // ---- server
+  async function api(method, path, body, auth = true){
+    const headers = { "Content-Type": "application/json" };
+    if (auth && sess()) headers.Authorization = `Bearer ${sess().mid}.${sess().token}`;
+    const r = await fetch("/api" + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+    let data = {};
+    try { data = await r.json(); } catch {}
+    if (!r.ok) { const e = new Error(data.error || "Something went wrong. Try again."); e.status = r.status; throw e; }
+    return data;
+  }
+
+  function tally(k){
+    const free=[], none=[];
+    for (const m of crew()) (daysOf(m)[k]==="free" ? free : none).push(m);
+    return { free, none };
+  }
+
+  // ---- rendering
+  function renderGroups(){
+    const el = $("#groups"); el.textContent = "";
+    for (const [id, s] of Object.entries(sessions)) {
+      const b = document.createElement("button");
+      b.type="button"; b.className="chip"; b.textContent = s.name || "Group";
+      b.setAttribute("aria-pressed", String(id === currentId));
+      b.onclick = () => openGroup(id);
+      el.appendChild(b);
+    }
+    el.hidden = !el.children.length;
+  }
+
+  function renderBanner(){
+    const el = $("#banner"); el.textContent=""; el.className="banner";
+    if (!group) return;
+    const n = crew().length, th = group.threshold || 4;
+    const plan = activePlan();
+
+    if (plan) {
+      const ins = crew().filter(m=>(m.rsvp||{})[plan.date]==="in"), outs = crew().filter(m=>(m.rsvp||{})[plan.date]==="out");
+      el.classList.add("on");
+      el.innerHTML = `<span class="eyebrow">It's on</span><h2></h2><p class="rsvp"></p><div class="row"></div>`;
+      el.querySelector("h2").textContent = `${longNice(plan.date)}. Pints.`;
+      el.querySelector(".rsvp").textContent = `${ins.length} in${outs.length?`, ${outs.length} out`:""}. ${ins.map(nameOf).join(", ")}`;
+      const row = el.querySelector(".row");
+      const me = crew().find(isMe), mine = me ? (me.rsvp||{})[plan.date] : null;
+      row.append(mkBtn(mine==="in"?"You're in ✓":"I'm in", "btn btn-primary", () => rsvp(plan.date,"in")));
+      row.append(mkBtn(mine==="out"?"You're out":"Can't make it", "btn btn-ghost", () => rsvp(plan.date,"out")));
+      row.append(mkBtn("Call it off", "btn btn-ghost", cancelPlan));
+      return;
+    }
+
+    let best=null;
+    for (let i=0;i<WEEKS*7;i++){
+      const d=new Date(today); d.setDate(today.getDate()+i);
+      const k=key(d), t=tally(k), score=t.free.length;
+      if (!best || score>best.score) best={k,t,score};
+    }
+    const golden = n && best && best.t.free.length >= th;
+    const goldenCount = countGolden(th);
+    el.innerHTML = `<span class="eyebrow"></span><h2></h2><p></p><div class="progress" aria-hidden="true"></div><div class="row"></div>`;
+    const eb = el.querySelector(".eyebrow"), h = el.querySelector("h2"), p = el.querySelector("p"), pr = el.querySelector(".progress"), row = el.querySelector(".row");
+    if (!best || best.score===0) {
+      eb.textContent = "No nights yet";
+      h.textContent = "Mark your free nights to get things going";
+      p.textContent = `You need ${th} people free on the same night for a session.`;
+    } else {
+      eb.textContent = golden ? `Golden night${goldenCount>1?` · ${goldenCount} so far`:""}` : "Best night so far";
+      h.textContent = golden ? `${longNice(best.k)}: ${best.t.free.length} of you are free` : longNice(best.k);
+      p.textContent = golden
+        ? "That's enough for a session. Lock it in before someone books a dinner party."
+        : `${best.t.free.length} free. ${th - best.t.free.length} more needed.`;
+      if (golden) { el.classList.add("on"); row.append(mkBtn("Lock it in 🍺","btn btn-primary",()=>lockPlan(best.k))); }
+      row.append(mkBtn("See who","btn btn-ghost",()=>{ selected=best.k; renderCal(); renderDetail(); $("#detail").scrollIntoView({behavior:"smooth",block:"nearest"}); }));
+    }
+    const total = Math.max(th, Math.min(n, 12));
+    const f = best ? best.t.free.length : 0;
+    for (let i=0;i<total;i++){ const s=document.createElement("i"); if(i<f) s.className="f"; pr.append(s); }
+  }
+
+  function countGolden(th){
+    let c=0;
+    for (let i=0;i<WEEKS*7;i++){ const d=new Date(today); d.setDate(today.getDate()+i); if (tally(key(d)).free.length>=th) c++; }
+    return c;
+  }
+
+  function renderCal(){
+    const el = $("#cal"); el.textContent="";
+    if (!group) return;
+    const th = group.threshold||4, n = Math.max(crew().length,1);
+    const plan = activePlan() ? activePlan().date : null;
+    const dow = document.createElement("div"); dow.className="dow";
+    DAYS.forEach(d=>{ const s=document.createElement("span"); s.textContent=d.slice(0,2); dow.append(s); });
+    el.append(dow);
+    const start = new Date(today); start.setDate(today.getDate() - ((today.getDay()+6)%7));
+    let lastMonth = -1;
+    for (let w=0; w<WEEKS; w++){
+      const days=[]; for(let d=0;d<7;d++){ const dt=new Date(start); dt.setDate(start.getDate()+w*7+d); days.push(dt); }
+      const firstOfMonth = days.find(d=>d.getDate()===1);
+      if (w===0 || firstOfMonth) {
+        const m = (firstOfMonth||days[0]).getMonth();
+        if (m!==lastMonth){ const h=document.createElement("div"); h.className="month"; h.textContent=MONTHS[m]; el.append(h); lastMonth=m; }
+      }
+      const row=document.createElement("div"); row.className="week";
+      for (const dt of days){
+        const k=key(dt), b=document.createElement("button");
+        b.type="button"; b.className="day"; b.dataset.k=k;
+        const past = dt < today, t = tally(k), mine = myDays[k];
+        if (past) b.classList.add("past");
+        if (k===todayKey) b.classList.add("today");
+        if (mine==="free") b.classList.add("mine-free");
+        if (!past && t.free.length>=th) b.classList.add("golden");
+        if (k===plan) b.classList.add("planned");
+        if (k===selected) b.classList.add("sel");
+        const fh = (t.free.length/n)*100;
+        b.innerHTML = `<span class="fill" style="height:${fh}%"></span><span class="num">${dt.getDate()}</span><span class="cnt">${t.free.length?t.free.length+"/"+crew().length:""}</span>`;
+        b.setAttribute("aria-label", `${longNice(k)}: ${t.free.length} free${mine?", including you":""}`);
+        if (past) b.disabled = true;
+        row.append(b);
+      }
+      el.append(row);
+    }
+  }
+
+  function renderDetail(){
+    const el=$("#detail"); el.textContent="";
+    if (!group) return;
+    if (!selected) {
+      el.innerHTML = `<h3>Pick a night</h3><p class="sub">Switch to “Who's in” and tap any night to see who's free.</p>`;
+      return;
+    }
+    const t = tally(selected), th = group.threshold||4;
+    const h=document.createElement("h3"); h.textContent=longNice(selected);
+    const sub=document.createElement("p"); sub.className="sub";
+    sub.textContent = t.free.length>=th ? `${t.free.length} free. That's a session.` : `${t.free.length} free. ${Math.max(th-t.free.length,0)} more needed.`;
+    el.append(h, sub);
+    const ul=document.createElement("ul"); ul.className="people";
+    t.free.forEach(m=>ul.append(personRow(m,"Free","free")));
+    t.none.forEach(m=>ul.append(personRow(m,"No answer","")));
+    el.append(ul);
+    const plan = activePlan() ? activePlan().date : null;
+    if (plan !== selected && t.free.length >= 2) {
+      const row=document.createElement("div"); row.className="row";
+      row.append(mkBtn(t.free.length>=th?"Lock in this night 🍺":"Lock it in anyway", t.free.length>=th?"btn btn-primary":"btn btn-ghost", ()=>lockPlan(selected)));
+      el.append(row);
+    }
+  }
+
+  function personRow(m, label, cls){
+    const li=document.createElement("li"); li.className="person";
+    const av=document.createElement("span"); av.className="av"; av.style.background=colorOf(m); av.textContent=initials(m.nick);
+    const nm=document.createElement("span"); nm.className="nm"; nm.textContent=nameOf(m);
+    const st=document.createElement("span"); st.className = cls!==null ? "tag "+(cls||"") : "st"; st.textContent=label;
+    li.append(av,nm,st); return li;
+  }
+
+  function renderCrew(){
+    const el=$("#crew"); el.textContent="";
+    if (!group) return;
+    const list = crew();
+    const h=document.createElement("h3"); h.textContent=`Who's in · ${list.length}`;
+    const sub=document.createElement("p"); sub.className="sub";
+    const quiet = list.filter(m=>!Object.keys(daysOf(m)).some(k=>k>=todayKey));
+    sub.textContent = list.length<2 ? "Just you so far. Invite your mates."
+      : quiet.length ? `${quiet.length} still to mark any nights. Give them a shout.` : "Everyone's marked some nights. Good lads.";
+    el.append(h,sub);
+    const ul=document.createElement("ul"); ul.className="people";
+    for (const m of list){
+      const n = Object.entries(daysOf(m)).filter(([k,v])=>k>=todayKey && v==="free").length;
+      const li = personRow(m, n ? `${n} free night${n>1?"s":""}` : "Hasn't marked anything 👀", null);
+      if (!n) li.querySelector(".st").classList.add("nudge");
+      ul.append(li);
+    }
+    el.append(ul);
+    const row=document.createElement("div"); row.className="row";
+    row.append(mkBtn("Invite mates","btn btn-primary",invite));
+    row.append(mkBtn("Change my name","btn btn-ghost",()=>openSheet("nick")));
+    row.append(mkBtn("Leave group","btn btn-ghost",leaveGroup));
+    el.append(row);
+  }
+
+  function renderStatus(msg){
+    const el=$("#status"); el.textContent="";
+    if (!msg) return;
+    if (typeof msg === "string") { const p=document.createElement("p"); p.className="loading"; p.textContent=msg; el.append(p); return; }
+    const d=document.createElement("div"); d.className="notice";
+    const s=document.createElement("strong"); s.textContent=msg[0]; d.append(s, document.createTextNode(msg[1]||""));
+    el.append(d);
+  }
+
+  function renderAll(){ renderGroups(); renderBanner(); renderCal(); renderDetail(); renderCrew(); }
+
+  function mkBtn(label, cls, fn){ const b=document.createElement("button"); b.type="button"; b.className=cls; b.textContent=label; b.onclick=fn; return b; }
+  let toastT; function toast(msg){ const t=$("#toast"); t.textContent=msg; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,3200); }
+
+  function showMain(on){ $("#mainView").hidden = !on; $("#gate").hidden = on; }
+
+  // ---- welcome / join screens
+  function showWelcome(){
+    showMain(false); renderGroups(); renderStatus();
+    const el=$("#gate");
+    el.innerHTML = `<h3>Find the night everyone's free</h3>
+      <p class="sub">Start a group, then send your mates the invite link and the group password. Everyone marks the nights they're free, and the app shows you when enough of you can make it.</p>
+      <p class="sub">Got an invite? Open the link your mate sent you.</p>
+      <div class="row"></div>`;
+    el.querySelector(".row").append(mkBtn("Start a group","btn btn-primary",()=>openSheet("create")));
+  }
+
+  async function showJoin(gid){
+    showMain(false); renderGroups(); renderStatus();
+    const el=$("#gate");
+    el.innerHTML = `<h3>Join the group</h3><p class="sub">Checking the invite…</p>
+      <form novalidate hidden>
+        <div class="field"><label for="jPass">Group password</label>
+          <input id="jPass" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="100"></div>
+        <div class="field"><label for="jNick">What do your mates call you?</label>
+          <input id="jNick" maxlength="24" placeholder="Big Steve"></div>
+        <p class="err" hidden></p>
+        <div class="row"><button class="btn btn-primary" type="submit" style="flex:1">Join</button></div>
+      </form>`;
+    const h=el.querySelector("h3"), sub=el.querySelector(".sub"), form=el.querySelector("form"), err=el.querySelector(".err");
+    try {
+      const info = await api("GET", `/groups/${encodeURIComponent(gid)}/info`, null, false);
+      h.textContent = `Join ${info.name}`;
+      sub.textContent = "Enter the group password your mate gave you, and the name they know you by. If you've joined before on another phone, use the same name to pick up your nights.";
+      form.hidden = false;
+      $("#jNick").value = lsGet("whosin.nick") || "";
+      $("#jPass").focus();
+    } catch (e) {
+      h.textContent = "Can't find that group";
+      sub.textContent = e.status===404 ? "This invite link doesn't match a group. Check the link with whoever sent it." : "Can't reach the app right now. Reload the page to try again.";
+      if (Object.keys(sessions).length) { const row=document.createElement("div"); row.className="row"; row.append(mkBtn("Back to my groups","btn btn-ghost",()=>{ history.replaceState(null,"","/"); route(); })); el.append(row); }
+      return;
+    }
+    form.addEventListener("submit", async e=>{
+      e.preventDefault();
+      const password=$("#jPass").value, nick=$("#jNick").value.trim();
+      err.hidden=true;
+      if (!password){ err.textContent="Enter the group password."; err.hidden=false; return; }
+      if (!nick){ err.textContent="Add the name your mates know you by."; err.hidden=false; return; }
+      const btn=form.querySelector("button[type=submit]"); btn.disabled=true;
+      try {
+        const r = await api("POST", `/groups/${encodeURIComponent(gid)}/join`, { password, nick }, false);
+        sessions[gid] = { mid:r.memberId, token:r.token, name:r.name }; saveSessions();
+        lsSet("whosin.nick", nick);
+        toast(`You're in ${r.name}. Mark your free nights.`);
+        openGroup(gid);
+      } catch(ex){ err.textContent=ex.message; err.hidden=false; }
+      btn.disabled=false;
+    });
+  }
+
+  // ---- routing
+  function route(){
+    stopPoll();
+    const g = urlGroup();
+    if (g && !sessions[g]) { currentId=null; showJoin(g); return; }
+    currentId = (g && sessions[g]) ? g : (sessions[lsGet("whosin.last")] ? lsGet("whosin.last") : Object.keys(sessions)[0] || null);
+    if (!currentId) { showWelcome(); return; }
+    if (urlGroup() !== currentId) history.replaceState(null, "", `/?g=${encodeURIComponent(currentId)}`);
+    lsSet("whosin.last", currentId);
+    group=null; members=[]; myDays={}; selected=null; dirty=false;
+    showMain(true); renderAll(); renderStatus("Pulling the group up…");
+    load(); startPoll();
+  }
+  function openGroup(id){
+    if (id===currentId && group) return;
+    history.replaceState(null, "", `/?g=${encodeURIComponent(id)}`);
+    route();
+  }
+
+  async function load(){
+    if (!currentId || !sess() || loading) return;
+    loading = true;
+    const id = currentId;
+    try {
+      const d = await api("GET", `/groups/${encodeURIComponent(id)}`);
+      if (id !== currentId) return;
+      group = d.group; members = d.members;
+      if (sess().name !== group.name) { sess().name = group.name; saveSessions(); }
+      const me = members.find(isMe);
+      if (me && !dirty && !writeBusy && !painting) myDays = { ...(me.days||{}) };
+      renderStatus(); renderAll();
+    } catch(e) {
+      if (id !== currentId) return;
+      if (e.status===401 || e.status===404) {
+        delete sessions[id]; saveSessions();
+        if (e.status===404) { history.replaceState(null,"","/"); toast("That group no longer exists."); }
+        else toast("Please join the group again.");
+        route();
+      } else renderStatus(["Can't reach the app right now.","It'll keep trying. Check your signal."]);
+    } finally { loading = false; }
+  }
+  function startPoll(){ stopPoll(); pollT = setInterval(()=>{ if (document.visibilityState==="visible") load(); }, 20000); }
+  function stopPoll(){ if (pollT) clearInterval(pollT); pollT=null; }
+  document.addEventListener("visibilitychange", ()=>{ if (document.visibilityState==="visible") load(); });
+
+  // ---- marking (tap + drag)
+  const toggle = s => s==="free" ? undefined : "free";
+  const cal = $("#cal");
+  function cellAt(x,y){ const el=document.elementFromPoint(x,y); return el && el.closest ? el.closest(".day:not(.past)") : null; }
+  function applyCell(b){
+    const k=b.dataset.k; if (painting.touched.has(k)) return; painting.touched.add(k);
+    if (painting.value) myDays[k]=painting.value; else delete myDays[k];
+    selected = k; dirty = true;
+    renderCal();
+  }
+  cal.addEventListener("pointerdown", e=>{
+    const b = e.target.closest(".day:not(.past)"); if (!b || !group) return;
+    if (mode==="look") { selected=b.dataset.k; renderCal(); renderDetail(); return; }
+    e.preventDefault();
+    painting = { value: toggle(myDays[b.dataset.k]), touched: new Set() };
+    cal.classList.add("painting");
+    try { cal.setPointerCapture(e.pointerId); } catch {}
+    applyCell(b);
+  });
+  cal.addEventListener("pointermove", e=>{ if(!painting) return; const b=cellAt(e.clientX,e.clientY); if(b) applyCell(b); });
+  const endPaint = () => { if(!painting) return; painting=null; cal.classList.remove("painting"); renderAll(); saveMine(); };
+  cal.addEventListener("pointerup", endPaint); cal.addEventListener("pointercancel", endPaint);
+  cal.addEventListener("keydown", e=>{
+    if (e.key!=="Enter" && e.key!==" ") return;
+    const b=e.target.closest(".day:not(.past)"); if(!b) return; e.preventDefault();
+    if (mode==="look") { selected=b.dataset.k; renderAll(); return; }
+    const v=toggle(myDays[b.dataset.k]);
+    if (v) myDays[b.dataset.k]=v; else delete myDays[b.dataset.k];
+    selected=b.dataset.k; dirty=true; renderAll(); saveMine();
+  });
+
+  function setMode(m){ mode=m; $("#modeMark").setAttribute("aria-pressed",m==="mark"); $("#modeLook").setAttribute("aria-pressed",m==="look");
+    $("#hint").textContent = m==="mark" ? MARK_HINT : LOOK_HINT; }
+  $("#modeMark").onclick=()=>setMode("mark"); $("#modeLook").onclick=()=>setMode("look");
+
+  // ---- writes
+  async function saveMine(){
+    if (!sess()) return;
+    if (writeBusy){ writePending=true; return; }
+    writeBusy=true; dirty=false;
+    const id = currentId;
+    try {
+      const days={}; for (const [k,v] of Object.entries(myDays)) if (k>=todayKey) days[k]=v;
+      await api("PUT", `/groups/${encodeURIComponent(id)}/me`, { days });
+      const me = members.find(isMe); if (me) me.days = { ...days };
+    } catch(e){ dirty=true; toast(e.status===401 ? "Please join the group again." : "Couldn't save just now. Try again in a moment."); }
+    writeBusy=false;
+    if (writePending){ writePending=false; saveMine(); }
+  }
+  async function lockPlan(k){
+    try { await api("PUT", `/groups/${encodeURIComponent(currentId)}/plan`, { date:k }); toast(`${nice(k)} is on`); await load(); }
+    catch(e){ toast(e.message); }
+  }
+  async function cancelPlan(){
+    if (!confirm("Call off the night for everyone?")) return;
+    try { await api("PUT", `/groups/${encodeURIComponent(currentId)}/plan`, { date:null }); toast("Called off"); await load(); }
+    catch(e){ toast(e.message); }
+  }
+  async function rsvp(k, v){
+    try { await api("PUT", `/groups/${encodeURIComponent(currentId)}/me`, { rsvp:{ [k]:v } }); await load(); }
+    catch(e){ toast(e.message); }
+  }
+  async function invite(){
+    const url = `${location.origin}/?g=${encodeURIComponent(currentId)}`;
+    if (navigator.share) {
+      try { await navigator.share({ title:"Who's in?", text:`Mark your free nights for ${group.name} on Who's in? I'll send you the password.`, url }); return; }
+      catch(e){ if (e && e.name==="AbortError") return; }
+    }
+    try { await navigator.clipboard.writeText(url); toast("Invite link copied. Send them the password separately."); }
+    catch { prompt("Copy this invite link and send it with the group password:", url); }
+  }
+  async function leaveGroup(){
+    if (!confirm(`Leave ${group.name}? Your nights will be removed from the group.`)) return;
+    try {
+      await api("DELETE", `/groups/${encodeURIComponent(currentId)}/me`);
+      delete sessions[currentId]; saveSessions(); lsDel("whosin.last");
+      history.replaceState(null,"","/"); toast("You've left the group."); route();
+    } catch(e){ toast(e.message); }
+  }
+
+  // ---- sheet (new group / rename)
+  let sheetMode="create", th=4;
+  function openSheet(m){
+    sheetMode=m; th=4; $("#tVal").textContent=th; $("#sheetErr").hidden=true;
+    for (const id of ["#fName","#fPass","#fThresh"]) $(id).hidden = m!=="create";
+    $("#sheetTitle").textContent = m==="create" ? "New group" : "Change your name";
+    $("#sheetGo").textContent = m==="create" ? "Create group" : "Save";
+    $("#gName").value=""; $("#gPass").value="";
+    const me = members.find(isMe);
+    $("#nick").value = (m==="nick" && me ? me.nick : lsGet("whosin.nick")) || "";
+    $("#sheetWrap").hidden=false;
+    setTimeout(()=> (m==="create"?$("#gName"):$("#nick")).focus(), 30);
+  }
+  const closeSheet=()=>{ $("#sheetWrap").hidden=true; };
+  $("#sheetCancel").onclick=closeSheet;
+  $("#sheetWrap").addEventListener("click", e=>{ if(e.target.id==="sheetWrap") closeSheet(); });
+  $("#tMinus").onclick=()=>{ th=Math.max(2,th-1); $("#tVal").textContent=th; };
+  $("#tPlus").onclick=()=>{ th=Math.min(20,th+1); $("#tVal").textContent=th; };
+  $("#newGroupBtn").onclick=()=>openSheet("create");
+  $("#sheet").addEventListener("submit", async e=>{
+    e.preventDefault();
+    const nick=$("#nick").value.trim(), name=$("#gName").value.trim(), password=$("#gPass").value;
+    const err=$("#sheetErr"); err.hidden=true;
+    if (sheetMode==="create" && !name){ err.textContent="Give the group a name."; err.hidden=false; return; }
+    if (sheetMode==="create" && password.length<4){ err.textContent="Pick a password of at least 4 characters."; err.hidden=false; return; }
+    if (!nick){ err.textContent="Add the name your mates know you by."; err.hidden=false; return; }
+    $("#sheetGo").disabled=true;
+    try {
+      if (sheetMode==="create"){
+        const r = await api("POST", "/groups", { name, password, threshold:th, nick }, false);
+        sessions[r.groupId] = { mid:r.memberId, token:r.token, name:r.name }; saveSessions();
+        lsSet("whosin.nick", nick);
+        closeSheet();
+        toast(`${r.name} is ready. Tap “Invite mates” to send the link.`);
+        openGroup(r.groupId);
+      } else {
+        await api("PUT", `/groups/${encodeURIComponent(currentId)}/me`, { nick });
+        lsSet("whosin.nick", nick);
+        closeSheet(); toast("Name updated"); await load();
+      }
+    } catch(ex){ err.textContent=ex.message; err.hidden=false; }
+    $("#sheetGo").disabled=false;
+  });
+  document.addEventListener("keydown", e=>{ if(e.key==="Escape" && !$("#sheetWrap").hidden) closeSheet(); });
+
+  setMode("mark");
+  route();
+})();
+</script>
+</body>
+</html>
